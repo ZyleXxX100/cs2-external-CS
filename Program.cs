@@ -62,8 +62,9 @@ new Thread(() =>
         IntPtr localPlayerPawn = swed.ReadPointer(client + dwLocalPlayerPawn);
         IntPtr entityList = swed.ReadPointer(client + dwEntityList);
         IntPtr listEntry = swed.ReadPointer(entityList, 0x10);
+        IntPtr listEntry2 = swed.ReadPointer(entityList, 0x18); // <-- Added to fix CS0103
 
-        if (localPlayerPawn == IntPtr.Zero || entityList == IntPtr.Zero || listEntry == IntPtr.Zero)
+        if (localPlayerPawn == IntPtr.Zero || entityList == IntPtr.Zero || listEntry == IntPtr.Zero || listEntry2 == IntPtr.Zero)
         {
             Thread.Sleep(1);
             continue;
@@ -80,8 +81,11 @@ new Thread(() =>
 
         if (crosshairEntIndex != -1)
         {
-            IntPtr crossListEntry = swed.ReadPointer(entityList, 0x8 * ((crosshairEntIndex & 0x7FFF) >> 9) + 0x10);
-            IntPtr crossEntity = swed.ReadPointer(crossListEntry, 0x78 * (crosshairEntIndex & 0x1FF) + 0x10);
+            IntPtr crossListEntry = swed.ReadPointer(entityList + 0x10 + 0x8 * ((crosshairEntIndex & 0x7FFF) >> 9));
+            if (crossListEntry == IntPtr.Zero) continue;
+
+            IntPtr crossEntity = swed.ReadPointer(crossListEntry + 0x70 * (crosshairEntIndex & 0x1FF));
+            if (crossEntity == IntPtr.Zero) continue;
 
             if (crossEntity != IntPtr.Zero)
             {
@@ -109,10 +113,7 @@ new Thread(() =>
             int pawnHandle = swed.ReadInt(currentController + m_hPlayerPawn);
             if (pawnHandle == 0) continue;
 
-            IntPtr listEntry2 = swed.ReadPointer(entityList, 0x8 * ((pawnHandle & 0x7FFF) >> 9) + 0x10);
-            if (listEntry2 == IntPtr.Zero) continue;
-
-            IntPtr currentPawn = swed.ReadPointer(listEntry2, 0x78 * (pawnHandle & 0x1FF));
+            IntPtr currentPawn = swed.ReadPointer(listEntry2 + 0x70 * (pawnHandle & 0x1FF));
             if (currentPawn == IntPtr.Zero) continue;
 
             if (swed.ReadInt(currentPawn + m_lifeState) != 256) continue;
